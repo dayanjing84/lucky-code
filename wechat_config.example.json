@@ -1,0 +1,38 @@
+{
+  "_comment": "微信发送配置文件示例",
+  "_usage": "复制此文件为 wechat_config.json 并填入真实配置",
+
+  "send_type": "none",
+  "_send_type_options": ["public", "work", "none"],
+  "_send_type_desc": {
+    "public": "微信公众号（需要认证的订阅号或服务号）",
+    "work": "企业微信（推荐，更稳定）",
+    "none": "不发送，仅生成图片"
+  },
+
+  "config": {
+    "_comment_public": "如果使用公众号，请填写以下配置",
+    "app_id": "你的AppID",
+    "app_secret": "你的AppSecret",
+
+    "_comment_work": "如果使用企业微信，请填写以下配置",
+    "corp_id": "你的企业ID",
+    "agent_id": 1000001,
+    "agent_secret": "你的应用Secret"
+  },
+
+  "_获取方式": {
+    "公众号配置": {
+      "登录": "https://mp.weixin.qq.com/",
+      "位置": "设置与开发 -> 基本配置 -> 开发者ID(AppID) 和 开发者密码(AppSecret)",
+      "注意": "需要认证的公众号才能使用素材上传和发布功能"
+    },
+    "企业微信配置": {
+      "登录": "https://work.weixin.qq.com/",
+      "位置": "管理后台 -> 应用管理 -> 自建应用",
+      "corp_id": "我的企业 -> 企业信息 -> 企业ID",
+      "agent_id": "应用详情 -> AgentId",
+      "agent_secret": "应用详情 -> Secret"
+    }
+  }
+}

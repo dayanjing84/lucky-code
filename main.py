@@ -16,6 +16,7 @@ from app.holidays_util import date_cn_str, get_holiday_name
 from app.ai_copy import generate_copy
 from app.weather_api import get_weather
 from app.theme_system import select_theme, get_theme_description
+from app.wechat_sender import create_wechat_sender
 try:
     from app.poster_generator_v2 import render_poster  # 新版渲染（3x3、两行meta、间距优化）
 except Exception:
@@ -31,7 +32,7 @@ def format_out_name(d: datetime) -> str:
     return d.strftime("%Y%m%d_%H%M.jpg")
 
 
-def generate_once(category: str | None, *, slot: str | None = None, excel_path: Path | None = None, debug: bool = False) -> Path | None:
+def generate_once(category: str | None, *, slot: str | None = None, excel_path: Path | None = None, debug: bool = False, auto_send: bool = False) -> Path | None:
     ensure_dirs()
     d = now_shanghai()
     slot_tag = slot or ("morning" if d.hour < 12 else ("noon" if d.hour < 18 else "evening"))
@@ -123,6 +124,23 @@ def generate_once(category: str | None, *, slot: str | None = None, excel_path: 
     store.mark_used([it["号码"] for it in items], category=chosen, output_path=str(out_path))
 
     print(f"[OK] 已生成: {out_path}")
+
+    # 自动发送到微信
+    if auto_send:
+        try:
+            sender = create_wechat_sender()
+            success = sender.send_poster(
+                image_path=out_path,
+                title=title,
+                description=tagline
+            )
+            if success:
+                print("[OK] 微信发送成功")
+            else:
+                print("[WARN] 微信发送失败或未启用")
+        except Exception as e:
+            print(f"[ERROR] 微信发送异常: {e}")
+
     return out_path
 
 
@@ -150,19 +168,22 @@ def list_categories(excel_path: Path | None = None) -> int:
 def run_schedule(excel_path: Path | None = None) -> None:
     sched = BlockingScheduler(timezone=CFG.timezone)
 
-    def job(category: str | None, slot: str):
+    def job(category: str | None, slot: str, auto_send: bool = False):
         try:
-            generate_once(category, slot=slot, excel_path=excel_path)
+            generate_once(category, slot=slot, excel_path=excel_path, auto_send=auto_send)
         except Exception as e:
             print(f"[ERROR] 任务异常: {e}")
 
-    # 三个时间点
+    # 三个时间点,12点和18点自动发送
     p = CFG.schedule_plan or {"09:00": None, "12:00": None, "18:00": None}
     for hhmm, cat in p.items():
         hh, mm = [int(x) for x in hhmm.split(":")]
         slot = "morning" if hh < 12 else ("noon" if hh < 18 else "evening")
-        sched.add_job(job, "cron", hour=hh, minute=mm, args=[cat, slot], id=f"slot_{hhmm}")
-        print(f"[SCHED] 已安排 {hhmm} 分类={cat or '自动选择'}")
+        # 12:00和18:00自动发送到微信
+        auto_send = (hhmm in ["12:00", "18:00"])
+        sched.add_job(job, "cron", hour=hh, minute=mm, args=[cat, slot, auto_send], id=f"slot_{hhmm}")
+        send_tag = " [自动发送微信]" if auto_send else ""
+        print(f"[SCHED] 已安排 {hhmm} 分类={cat or '自动选择'}{send_tag}")
 
     print("[SCHED] 调度器启动，按 Ctrl+C 停止")
     try:
@@ -180,6 +201,7 @@ def main(argv=None) -> int:
     parser.add_argument("--debug", action="store_true", help="打印调试信息（选取号码等）")
     parser.add_argument("--slot", type=str, choices=["morning", "noon", "evening"], default=None, help="覆盖时段：morning/noon/evening")
     parser.add_argument("--list-categories", action="store_true", help="仅列出分类与数量并退出")
+    parser.add_argument("--send", action="store_true", help="生成后自动发送到微信（需配置wechat_config.json）")
 
     args = parser.parse_args(argv)
 
@@ -188,7 +210,7 @@ def main(argv=None) -> int:
         return list_categories(excel_override)
 
     if args.once:
-        generate_once(args.category, slot=args.slot, excel_path=excel_override, debug=args.debug)
+        generate_once(args.category, slot=args.slot, excel_path=excel_override, debug=args.debug, auto_send=args.send)
         return 0
 
     if args.schedule:

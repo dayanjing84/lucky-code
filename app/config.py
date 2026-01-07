@@ -11,7 +11,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 @dataclass(frozen=True)
 class AppConfig:
     excel_file: Path = BASE_DIR / "吉祥号码.xlsx"
-    template_image: Path = BASE_DIR / "吉祥号图片.jpg"
     output_dir: Path = BASE_DIR / "output"
     used_json: Path = BASE_DIR / "used_numbers.json"
     timezone: str = "Asia/Shanghai"
@@ -41,6 +40,12 @@ class AppConfig:
         r"C:\\Windows\\Fonts\\msyh.ttc",
         r"C:\\Windows\\Fonts\\msyh.ttf",
         str(BASE_DIR / "arial.ttf"),
+        # Linux服务器字体
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     )
 
 

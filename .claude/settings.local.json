@@ -4,7 +4,10 @@
       "Bash(python -c:*)",
       "Bash(python theme_preview.py:*)",
       "Bash(dir:*)",
-      "Read(//c/**)"
+      "Read(//c/**)",
+      "Bash(python -m pip:*)",
+      "Bash(findstr:*)",
+      "Bash(python main.py:*)"
     ],
     "deny": [],
     "ask": []
